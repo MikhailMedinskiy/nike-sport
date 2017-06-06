@@ -68,6 +68,7 @@ body{
 	height: 10px;
 	border-radius: 50%;
 	margin: 5px;
+	cursor: pointer;
 	
 }
 .list-color__item:first-child{
@@ -84,7 +85,7 @@ body{
 	background: #24E7EE;
 }
 
-.list-color__item--dark--active{
+.list-color__item--active{
 	box-shadow: 0 0 0px 2px rgba(255, 255, 255, .5)
 }
 
@@ -99,4 +100,50 @@ body{
 	font-size: 14px;
 	font-weight: 100;
 	color: #e1e1e1;
+}
+.options{
+	margin-bottom: 20px;
+}
+
+.raiting{
+	margin-bottom: 5px;
+}
+
+.options:after{
+	display: table;
+	content: "";
+	clear: both
+}
+
+.options__block{
+	float: left;
+	font-size: 14px;
+	color: #e1e1e1;
+	padding: 5px;
+	margin: 2px;
+	border: 1px solid #616873;
+	min-width: 70px;
+	text-align: center;
+	cursor: pointer;
+}
+
+.btn{
+	border: none;
+	background: transparent;
+	color: #e1e1e1;
+	padding: 10px;
+	font-size: 14px;
+	background: rgba(255, 255, 255, 0.1);
+	display: inline-block;
+	min-width: 183px;
+	border: 1px solid #616873;
+	cursor: pointer;
+	transition: 0.3s;
+}
+
+.btn:hover{
+	box-shadow: 0 5px 11px 0 rgba(0,0,0,.18), 0 4px 15px 0 rgba(0,0,0,.15);
+}
+.btn:active, .btn:focus{
+	box-shadow: 0 2px 11px 0 rgba(0,0,0,.18), 0 1px 15px 0 rgba(0,0,0,.15);
 }
