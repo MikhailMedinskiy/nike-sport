@@ -1,0 +1,102 @@
+*{
+	margin: 0;
+	padding: 0;
+	outline: none;
+	box-sizing: border-box;
+}
+
+body{
+	color: #e1e1e1;
+	min-width: 320px;
+	background: #fff;
+	line-height: 1.6;
+	font-size: 16px;
+	font-family: "MuseoSansRegular", sans-serif;
+	background: #D0D0D2;
+	min-width: 320px;
+}
+.wrapper{
+	background: url(../img/main-bg.jpg); 
+	background-repeat: no-repeat;
+	background-position: center;
+	width: 800px;
+	margin: 50px auto;
+	padding: 140px 10px;
+}
+
+.container{
+	width: 690px;
+	margin: 0 auto;	
+}
+
+.product{
+	background: #152335;
+	border-radius: 3px;
+	padding: 23px;
+	box-shadow: 0px 0px 17px 1px #000;
+	font-size: 0;
+}
+
+.product__slider{
+	
+}
+
+.product__info{
+	width: 40%;
+	vertical-align: top;
+	display: inline-block;
+	font-size: 16px;
+	padding: 0 15px;
+}
+
+.product__slider{
+	padding: 50px 15px 0 15px;
+	text-align: center;
+	width: 60%;
+	display: inline-block;
+	font-size: 16px;
+	vertical-align: top;
+}
+
+.list-color{
+	list-style-type: none;
+	padding-top: 50px;
+}
+.list-color__item{
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin: 5px;
+	
+}
+.list-color__item:first-child{
+	background: #293550;
+}
+.list-color__item:nth-child(2){
+	background: #fff;
+}
+.list-color__item:nth-child(3){
+	background: #F34B42;
+}
+
+.list-color__item:nth-child(4){
+	background: #24E7EE;
+}
+
+.list-color__item--dark--active{
+	box-shadow: 0 0 0px 2px rgba(255, 255, 255, .5)
+}
+
+
+.product__title{
+	font-size: 24px;
+	font-weight: 100;
+	line-height: 1.3;
+	margin: 0 0 5px 0;
+}
+.product__subtitle{
+	font-size: 14px;
+	font-weight: 100;
+	color: #e1e1e1;
+}
