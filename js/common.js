@@ -1,6 +1,5 @@
 (function ($) {
 
-
     $(document).ready(function () {
 
         $(".list-color__item").on( "click", function(){
@@ -11,7 +10,5 @@
 
         });
     });
-
-   
 
 })(jQuery);
