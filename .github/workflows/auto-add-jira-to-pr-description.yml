@@ -1,0 +1,51 @@
+name: Auto add Jira ticket to PR description
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  update-pr-description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add Jira ticket to PR description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            // Only proceed if the branch name matches the expected pattern
+            const match = branch.match(/OBT-\d{4,5}/);
+            if (match) {
+              const jira = match[0];
+              const oldBody = context.payload.pull_request.body || "";
+              const jiraLineRegex = /- Ticket: \[OBT-\d{4,5}\]\([^)]+\)/;
+
+              // Line to add the Jira ticket
+              const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})`;
+
+              let newBody;
+              if (oldBody.includes('## 📋 Jira Ticket')) {
+                // Replace the existing Jira ticket line if it exists
+                if (jiraLineRegex.test(oldBody)) {
+                  newBody = oldBody.replace(jiraLineRegex, newJiraLine);
+                } else {
+                  // If the section exists but the ticket line is missing, add it
+                  newBody = oldBody.replace(
+                    /(## 📋 Jira Ticket)/,
+                    `$1\n\n${newJiraLine}`
+                  );
+                }
+              } else {
+                // If the section does not exist, create it
+                newBody = `## 📋 Jira Ticket\n\n${newJiraLine}\n\n${oldBody}`;
+              }
+
+              // If the body has changed, update the PR description
+              if (oldBody !== newBody) {
+                await github.rest.pulls.update({
+                  ...context.repo,
+                  pull_number: context.payload.pull_request.number,
+                  body: newBody
+                });
+              }
+            }
