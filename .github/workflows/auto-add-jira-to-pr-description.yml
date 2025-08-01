@@ -21,43 +21,22 @@ jobs:
             let oldBody = context.payload.pull_request.body || "";
 
             // --- Jira ticket section logic ---
-
-            // Regex matches any "- Ticket: [OBT-...](...)" line right after the section header
             const jiraSectionRegex = /(## 📋 Jira Ticket\s*\n)((- Ticket: \[OBT-[A-Z0-9X]{4,7}\]\([^)]+\)\s*\n*)*)/i;
             const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})\n\n`;
 
             let newBody;
             if (jiraSectionRegex.test(oldBody)) {
-              // Replace everything after the section header with just the correct ticket line
               newBody = oldBody.replace(jiraSectionRegex, `$1${newJiraLine}`);
             } else if (oldBody.includes('## 📋 Jira Ticket')) {
-              // Header exists, but no ticket line — insert the ticket line right after the header
               newBody = oldBody.replace(/(## 📋 Jira Ticket\s*\n)/, `$1${newJiraLine}`);
             } else {
-              // No section header at all, add the section at the top
               newBody = `## 📋 Jira Ticket\n\n${newJiraLine}${oldBody}`;
             }
 
             // --- Description section cleanup logic ---
-            // Regex: finds "## 📝 Description" and any amount of whitespace/newlines up to next header or end of string
-            const descEmptySectionRegex = /(## 📝 Description\s*\n)(\s*)(?=(## |$))/;
-
-            newBody = newBody.replace(descEmptySectionRegex, (match, header, content) => {
-              // If there's only whitespace/newlines after header, remove the section entirely
-              if (!content.trim()) {
-                return '';
-              }
-              // Otherwise, leave as is
-              return match;
-            });
-
-            // Remove excessive newlines (more than two)
-            newBody = newBody.replace(/\n{3,}/g, '\n\n');
-
-            if (oldBody !== newBody) {
-              await github.rest.pulls.update({
-                ...context.repo,
-                pull_number: context.payload.pull_request.number,
-                body: newBody
-              });
-            }
+            // This regex will remove the 'Description' section if nothing (except whitespace) follows it up to the next header or end of file
+            newBody = newBody.replace(
+              /(## 📝 Description\s*\n)((?:\s|\r|\n)*)(?=(## |<!--|$))/g,
+              (match, header, content, nextHeader) => {
+                if (!content.trim()) {
+                  // If only whitespace/newlines after header, remove the whole s
