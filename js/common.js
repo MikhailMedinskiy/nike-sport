@@ -1,5 +1,5 @@
 (function ($) {
-    console.log('common.js loaded');
+    console.log('common.js ');
     $(document).ready(function () {
 
         $(".list-color__item").on( "click", function(){
