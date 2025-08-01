@@ -13,34 +13,33 @@ jobs:
         with:
           script: |
             const branch = context.payload.pull_request.head.ref;
-            // Only proceed if the branch name matches the expected pattern
+            // Match only OBT-XXXX or OBT-XXXXX pattern in the branch name
             const match = branch.match(/OBT-\d{4,5}/);
             if (match) {
               const jira = match[0];
               const oldBody = context.payload.pull_request.body || "";
-              const jiraLineRegex = /- Ticket: \[OBT-\d{4,5}\]\([^)]+\)/;
+              // Improved regex: matches ANY ticket line with OBT-xxxx
+              const jiraLineRegex = /- Ticket: \[OBT-\d{4,5}\]\([^)]+\)\n?/g;
 
-              // Line to add the Jira ticket
+              // New Jira ticket line
               const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})`;
 
               let newBody;
               if (oldBody.includes('## 📋 Jira Ticket')) {
-                // Replace the existing Jira ticket line if it exists
-                if (jiraLineRegex.test(oldBody)) {
-                  newBody = oldBody.replace(jiraLineRegex, newJiraLine);
-                } else {
-                  // If the section exists but the ticket line is missing, add it
-                  newBody = oldBody.replace(
-                    /(## 📋 Jira Ticket)/,
-                    `$1\n\n${newJiraLine}`
-                  );
-                }
+                // Always remove all ticket lines after the section header to avoid duplicates
+                newBody = oldBody.replace(jiraLineRegex, '');
+                newBody = newBody.replace(
+                  /(## 📋 Jira Ticket(\r?\n)+)/,
+                  `$1${newJiraLine}\n\n`
+                );
               } else {
-                // If the section does not exist, create it
+                // If the section header is missing — add it to the top
                 newBody = `## 📋 Jira Ticket\n\n${newJiraLine}\n\n${oldBody}`;
               }
 
-              // If the body has changed, update the PR description
+              // Remove excessive newlines if any remain
+              newBody = newBody.replace(/\n{3,}/g, '\n\n');
+
               if (oldBody !== newBody) {
                 await github.rest.pulls.update({
                   ...context.repo,
