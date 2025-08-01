@@ -15,36 +15,36 @@ jobs:
             const branch = context.payload.pull_request.head.ref;
             // Match only OBT-XXXX or OBT-XXXXX pattern in the branch name
             const match = branch.match(/OBT-\d{4,5}/);
-            if (match) {
-              const jira = match[0];
-              const oldBody = context.payload.pull_request.body || "";
-              // Improved regex: matches ANY ticket line with OBT-xxxx
-              const jiraLineRegex = /- Ticket: \[OBT-\d{4,5}\]\([^)]+\)\n?/g;
+            if (!match) return;
 
-              // New Jira ticket line
-              const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})`;
+            const jira = match[0];
+            const oldBody = context.payload.pull_request.body || "";
 
-              let newBody;
-              if (oldBody.includes('## 📋 Jira Ticket')) {
-                // Always remove all ticket lines after the section header to avoid duplicates
-                newBody = oldBody.replace(jiraLineRegex, '');
-                newBody = newBody.replace(
-                  /(## 📋 Jira Ticket(\r?\n)+)/,
-                  `$1${newJiraLine}\n\n`
-                );
-              } else {
-                // If the section header is missing — add it to the top
-                newBody = `## 📋 Jira Ticket\n\n${newJiraLine}\n\n${oldBody}`;
-              }
+            // Regex to match the section including all ticket lines right after the header
+            const jiraSectionRegex = /(## 📋 Jira Ticket\s*\n)((- Ticket: \[OBT-\d{4,5}\]\([^)]+\)\s*\n*)*)/;
 
-              // Remove excessive newlines if any remain
-              newBody = newBody.replace(/\n{3,}/g, '\n\n');
+            // The correct ticket line
+            const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})\n\n`;
 
-              if (oldBody !== newBody) {
-                await github.rest.pulls.update({
-                  ...context.repo,
-                  pull_number: context.payload.pull_request.number,
-                  body: newBody
-                });
-              }
+            let newBody;
+            if (jiraSectionRegex.test(oldBody)) {
+              // Replace everything after the section header with just the correct ticket line
+              newBody = oldBody.replace(jiraSectionRegex, `$1${newJiraLine}`);
+            } else if (oldBody.includes('## 📋 Jira Ticket')) {
+              // Header exists, but no ticket line — insert the ticket line right after the header
+              newBody = oldBody.replace(/(## 📋 Jira Ticket\s*\n)/, `$1${newJiraLine}`);
+            } else {
+              // No section header at all, add the section at the top
+              newBody = `## 📋 Jira Ticket\n\n${newJiraLine}${oldBody}`;
+            }
+
+            // Remove excessive newlines
+            newBody = newBody.replace(/\n{3,}/g, '\n\n');
+
+            if (oldBody !== newBody) {
+              await github.rest.pulls.update({
+                ...context.repo,
+                pull_number: context.payload.pull_request.number,
+                body: newBody
+              });
             }
