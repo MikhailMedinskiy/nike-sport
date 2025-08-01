@@ -8,22 +8,22 @@ jobs:
   update-pr-description:
     runs-on: ubuntu-latest
     steps:
-      - name: Add Jira ticket to PR description
+      - name: Add Jira ticket to PR description and clean up Description section
         uses: actions/github-script@v7
         with:
           script: |
             const branch = context.payload.pull_request.head.ref;
-            // Match only OBT-XXXX or OBT-XXXXX pattern in the branch name
+            // Match OBT-XXXX or OBT-XXXXX pattern in the branch name
             const match = branch.match(/OBT-\d{4,5}/);
             if (!match) return;
 
             const jira = match[0];
-            const oldBody = context.payload.pull_request.body || "";
+            let oldBody = context.payload.pull_request.body || "";
 
-            // Regex to match the section including all ticket lines right after the header
-            const jiraSectionRegex = /(## 📋 Jira Ticket\s*\n)((- Ticket: \[OBT-\d{4,5}\]\([^)]+\)\s*\n*)*)/;
+            // --- Jira ticket section logic ---
 
-            // The correct ticket line
+            // Regex matches any "- Ticket: [OBT-...](...)" line right after the section header
+            const jiraSectionRegex = /(## 📋 Jira Ticket\s*\n)((- Ticket: \[OBT-[A-Z0-9X]{4,7}\]\([^)]+\)\s*\n*)*)/i;
             const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})\n\n`;
 
             let newBody;
@@ -38,7 +38,20 @@ jobs:
               newBody = `## 📋 Jira Ticket\n\n${newJiraLine}${oldBody}`;
             }
 
-            // Remove excessive newlines
+            // --- Description section cleanup logic ---
+            // Regex: finds "## 📝 Description" and any amount of whitespace/newlines up to next header or end of string
+            const descEmptySectionRegex = /(## 📝 Description\s*\n)(\s*)(?=(## |$))/;
+
+            newBody = newBody.replace(descEmptySectionRegex, (match, header, content) => {
+              // If there's only whitespace/newlines after header, remove the section entirely
+              if (!content.trim()) {
+                return '';
+              }
+              // Otherwise, leave as is
+              return match;
+            });
+
+            // Remove excessive newlines (more than two)
             newBody = newBody.replace(/\n{3,}/g, '\n\n');
 
             if (oldBody !== newBody) {
