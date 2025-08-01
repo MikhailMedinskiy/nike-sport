@@ -8,52 +8,57 @@ jobs:
   update-pr-description:
     runs-on: ubuntu-latest
     steps:
-      - name: Add Jira ticket to PR description and clean up Description section
+      - name: Update PR description with Jira ticket and cleanup
         uses: actions/github-script@v7
         with:
           script: |
             const branch = context.payload.pull_request.head.ref;
-            // Match OBT-XXXX or OBT-XXXXX pattern
             const match = branch.match(/OBT-\d{4,5}/);
             if (!match) return;
 
             const jira = match[0];
-            let oldBody = context.payload.pull_request.body || "";
+            let body = context.payload.pull_request.body || "";
 
-            // --- Jira ticket section logic ---
-            const jiraSectionRegex = /(## 📋 Jira Ticket\s*\n)((- Ticket: \[OBT-[A-Z0-9X]{4,7}\]\([^)]+\)\s*\n*)*)/i;
-            const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})\n\n`;
+            // ---------------------------
+            // Replace or inject Jira line
+            // ---------------------------
+            const jiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})`;
+            const jiraSectionHeader = '## 📋 Jira Ticket';
+            const jiraRegex = /- Ticket: \[OBT-[A-Z0-9X]{4,7}\]\([^)]+\)/i;
 
-            let newBody = oldBody;
-            if (jiraSectionRegex.test(newBody)) {
-              newBody = newBody.replace(jiraSectionRegex, `$1${newJiraLine}`);
-            } else if (newBody.includes('## 📋 Jira Ticket')) {
-              newBody = newBody.replace(/(## 📋 Jira Ticket\s*\n)/, `$1${newJiraLine}`);
+            if (body.includes(jiraSectionHeader)) {
+              body = body.replace(jiraRegex, jiraLine);
+              if (!body.includes(jiraLine)) {
+                // No ticket line to replace — insert after header
+                body = body.replace(jiraSectionHeader, `${jiraSectionHeader}\n\n${jiraLine}`);
+              }
             } else {
-              newBody = `## 📋 Jira Ticket\n\n${newJiraLine}${newBody}`;
+              // Section missing — insert full section at top
+              body = `${jiraSectionHeader}\n\n${jiraLine}\n\n${body}`;
             }
 
-            // --- Description section cleanup logic ---
-            // Remove the 'Description' section if it has no content before next section or EOF
-            newBody = newBody.replace(
-              /(## 📝 Description\s*\n)((?:.*?\n)*?)(?=(## |\n## |\r?\n<!--|$))/g,
-              function (match, header, content, nextHeader) {
-                if (content.trim() === '') {
-                  // If content is only whitespace, remove the section
-                  return '';
-                }
-                return match;
+            // -------------------------------------
+            // Remove `## 📝 Description` if empty
+            // -------------------------------------
+            const descSectionRegex = /(## 📝 Description\s*\n+)([\s\S]*?)(?=(\n## |\n<!--|$))/;
+            const matchDesc = body.match(descSectionRegex);
+
+            if (matchDesc) {
+              const [fullMatch, header, content] = matchDesc;
+              if (!content.trim()) {
+                // Description section is empty — remove it
+                body = body.replace(fullMatch, '');
               }
-            );
+            }
 
-            // Remove excessive newlines (more than 2)
-            newBody = newBody.replace(/\n{3,}/g, '\n\n');
+            // Cleanup: collapse extra newlines (more than 2)
+            body = body.replace(/\n{3,}/g, '\n\n').trim();
 
-            // Only update if body changed
-            if (oldBody !== newBody) {
+            // Update only if something changed
+            if (body !== context.payload.pull_request.body) {
               await github.rest.pulls.update({
                 ...context.repo,
                 pull_number: context.payload.pull_request.number,
-                body: newBody
+                body
               });
             }
