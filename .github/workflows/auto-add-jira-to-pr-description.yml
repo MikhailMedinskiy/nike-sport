@@ -13,7 +13,7 @@ jobs:
         with:
           script: |
             const branch = context.payload.pull_request.head.ref;
-            // Match OBT-XXXX or OBT-XXXXX pattern in the branch name
+            // Match OBT-XXXX or OBT-XXXXX pattern
             const match = branch.match(/OBT-\d{4,5}/);
             if (!match) return;
 
@@ -34,21 +34,22 @@ jobs:
             }
 
             // --- Description section cleanup logic ---
-            // Remove the 'Description' section if only whitespace follows it up to the next header or end of file
+            // Remove the 'Description' section if it has no content before next section or EOF
             newBody = newBody.replace(
-              /(## 📝 Description\s*\n)((?:\s|\r|\n)*)(?=(## |<!--|$))/g,
-              function(match, header, content, nextHeader) {
-                if (!content.trim()) {
-                  // Only whitespace/newlines after header, remove the whole section
+              /(## 📝 Description\s*\n)((?:.*?\n)*?)(?=(## |\n## |\r?\n<!--|$))/g,
+              function (match, header, content, nextHeader) {
+                if (content.trim() === '') {
+                  // If content is only whitespace, remove the section
                   return '';
                 }
                 return match;
               }
             );
 
-            // Remove excessive newlines (more than two)
+            // Remove excessive newlines (more than 2)
             newBody = newBody.replace(/\n{3,}/g, '\n\n');
 
+            // Only update if body changed
             if (oldBody !== newBody) {
               await github.rest.pulls.update({
                 ...context.repo,
