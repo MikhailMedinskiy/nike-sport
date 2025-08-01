@@ -24,19 +24,35 @@ jobs:
             const jiraSectionRegex = /(## 📋 Jira Ticket\s*\n)((- Ticket: \[OBT-[A-Z0-9X]{4,7}\]\([^)]+\)\s*\n*)*)/i;
             const newJiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})\n\n`;
 
-            let newBody;
-            if (jiraSectionRegex.test(oldBody)) {
-              newBody = oldBody.replace(jiraSectionRegex, `$1${newJiraLine}`);
-            } else if (oldBody.includes('## 📋 Jira Ticket')) {
-              newBody = oldBody.replace(/(## 📋 Jira Ticket\s*\n)/, `$1${newJiraLine}`);
+            let newBody = oldBody;
+            if (jiraSectionRegex.test(newBody)) {
+              newBody = newBody.replace(jiraSectionRegex, `$1${newJiraLine}`);
+            } else if (newBody.includes('## 📋 Jira Ticket')) {
+              newBody = newBody.replace(/(## 📋 Jira Ticket\s*\n)/, `$1${newJiraLine}`);
             } else {
-              newBody = `## 📋 Jira Ticket\n\n${newJiraLine}${oldBody}`;
+              newBody = `## 📋 Jira Ticket\n\n${newJiraLine}${newBody}`;
             }
 
             // --- Description section cleanup logic ---
-            // This regex will remove the 'Description' section if nothing (except whitespace) follows it up to the next header or end of file
+            // Remove the 'Description' section if only whitespace follows it up to the next header or end of file
             newBody = newBody.replace(
               /(## 📝 Description\s*\n)((?:\s|\r|\n)*)(?=(## |<!--|$))/g,
-              (match, header, content, nextHeader) => {
+              function(match, header, content, nextHeader) {
                 if (!content.trim()) {
-                  // If only whitespace/newlines after header, remove the whole s
+                  // Only whitespace/newlines after header, remove the whole section
+                  return '';
+                }
+                return match;
+              }
+            );
+
+            // Remove excessive newlines (more than two)
+            newBody = newBody.replace(/\n{3,}/g, '\n\n');
+
+            if (oldBody !== newBody) {
+              await github.rest.pulls.update({
+                ...context.repo,
+                pull_number: context.payload.pull_request.number,
+                body: newBody
+              });
+            }
