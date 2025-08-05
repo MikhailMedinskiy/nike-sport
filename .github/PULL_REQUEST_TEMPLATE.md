@@ -1,7 +1,3 @@
-<!-- GitHub Pull Request Template -->
+Ticket: [OBT-XXXX](https://entdevbcdtravel.atlassian.net/browse/OBT-XXXX)
 
-## 📋 Jira Ticket
-
-- Ticket: [OBT-XXXX](https://entdevbcdtravel.atlassian.net/browse/OBT-XXXX)
-
-## 📝 Description
+### Description
