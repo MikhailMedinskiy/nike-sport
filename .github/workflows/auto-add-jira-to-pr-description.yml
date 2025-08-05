@@ -19,33 +19,29 @@ jobs:
             const jira = match[0];
             let body = context.payload.pull_request.body || "";
 
-            // --- Update or insert Jira ticket ---
-            const jiraLine = `- Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})`;
-            const jiraHeader = '## 📋 Jira Ticket';
-            const ticketRegex = /- Ticket: \[OBT-[^\]]+\]\([^)]+\)/;
+            // --- Update or insert Jira ticket line ---
+            const jiraLine = `Ticket: [${jira}](https://entdevbcdtravel.atlassian.net/browse/${jira})`;
+            const ticketRegex = /Ticket: \[OBT-[^\]]+\]\([^)]+\)/;
 
-            if (body.includes(jiraHeader)) {
-              if (ticketRegex.test(body)) {
-                body = body.replace(ticketRegex, jiraLine);
-              } else {
-                body = body.replace(jiraHeader, `${jiraHeader}\n\n${jiraLine}`);
-              }
+            if (ticketRegex.test(body)) {
+              body = body.replace(ticketRegex, jiraLine);
             } else {
-              body = `${jiraHeader}\n\n${jiraLine}\n\n${body}`;
+              body = `${jiraLine}\n\n${body}`;
             }
 
-            // --- Remove empty ## 📝 Description section ---
+            // --- Remove empty ### Description section ---
             const lines = body.split('\n');
             const cleanedLines = [];
             for (let i = 0; i < lines.length; i++) {
               const line = lines[i];
-              if (line.trim() === '## 📝 Description') {
+              if (line.trim() === '### Description') {
                 let j = i + 1;
+                // Skip empty lines
                 while (j < lines.length && lines[j].trim() === '') {
                   j++;
                 }
-                if (j >= lines.length || lines[j].startsWith('## ') || lines[j].startsWith('<!--')) {
-                  // Skip the empty section
+                // If next content is a new section or end — remove
+                if (j >= lines.length || lines[j].startsWith('#')) {
                   i = j - 1;
                   continue;
                 }
